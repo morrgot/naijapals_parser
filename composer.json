@@ -1,0 +1,14 @@
+{
+    "name": "naijapals_parser",
+    "description": "test task",
+    "authors": [
+        {
+            "name": "Alex Ponirovskiy",
+            "email": "ponirovskalex@gmail.com"
+        }
+    ],
+    "require": {
+        "php": ">=5.4.0",
+        "sunra/php-simple-html-dom-parser": "v1.5.0"
+    }
+}
