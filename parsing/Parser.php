@@ -38,9 +38,20 @@ class Parser
          * @var $result \simple_html_dom_node[]
          */
         $this->dom = HtmlDomParser::file_get_html( $this->url );
-        //$result = $this->dom->find('.body-content .col-lg-4');
-        $result = $this->dom->find('#w1 a');
-        v($result[0]);
+        $result = $this->dom->find('div.col-xs-6 div.center-block');
+        $arr = [];
+        foreach ($result as $item) {
+            $song = $item->find('a.text-nowrap');
+            $author = $item->find('small strong');
+
+
+            $arr[] = [
+                'song' => $song[0]->text(),
+                'author' => $author[0]->text()
+            ];
+        }
+
+        p($arr);
         $this->dom->clear();
     }
 }

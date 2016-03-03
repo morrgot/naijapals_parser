@@ -20,7 +20,7 @@ class MainTask extends Task
         echo 'I\'m working!';
 
         $parser = new Parser();
-        $parser->setUrl('http://basic.dev');
+        $parser->setUrl('http://www.naijapals.com/?L=music.browse&page=1');
         $parser->readUrl();
     }
 

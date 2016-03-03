@@ -14,6 +14,12 @@ function v(){
     echo "\n";
 }
 
+function p($a){
+    echo "\n";
+    print_r($a);
+    echo "\n";
+}
+
 // load composer
 require __DIR__ . '/vendor/autoload.php';
 
