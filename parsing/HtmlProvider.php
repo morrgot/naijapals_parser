@@ -71,11 +71,17 @@ class HtmlProvider
 
         $this->status = curl_getinfo($ch,CURLINFO_HTTP_CODE);
         curl_close($ch);
+
         if($this->status >= 200 && $this->status < 300){
             $this->html = $output;
             return true;
         }else{
             return false;
         }
+    }
+
+    protected function validateUrl()
+    {
+
     }
 }
