@@ -13,6 +13,8 @@ use Phalcon\DiInterface;
 
 class Facade
 {
+    const HOST_URL = 'http://www.naijapals.com';
+
     /**
      * @var Parser
      */
@@ -49,7 +51,7 @@ class Facade
      * @param DiInterface $di
      * @param string $url
      */
-    public function __construct(DiInterface $di, $url = 'http://www.naijapals.com/?L=music.browse&page=1')
+    public function __construct(DiInterface $di, $url = self::HOST_URL.'/?L=music.browse&page=1')
     {
         $this->parser = $di->get('html_parser');
         $this->provider = $di->get('html_provider');
@@ -57,7 +59,13 @@ class Facade
         $this->url = trim($url);
     }
 
-    public function run()
+    public function setUrl($url)
+    {
+        $url = trim($url);
+
+    }
+
+    public function runParsing()
     {
         $this->provider->setUrl($this->url);
 
@@ -74,26 +82,19 @@ class Facade
             $songs = $this->parser->getSongs();
 
             $this->songs = array_merge($songs, $this->songs);
-            // todo: adding to db
 
-            //file_put_contents(time().'.html',$html);
-
-            if($this->pages_processed < 1){
-                $this->run();
+            if($this->pages_processed % 10 == 0){
+                $this->map2db();
             }
+
+            $this->runParsing();
         }
 
         return true;
     }
 
-    public function logSongs()
-    {
-        file_put_contents(APP_PATH.'/songs.txt', print_r($this->songs,1));
-    }
-
     public function map2db()
     {
-
         $this->mapper->mapIntoDb($this->songs);
         $this->songs = [];
     }

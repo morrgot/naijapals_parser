@@ -26,12 +26,10 @@ class MainTask extends Task
 
     public function runAction()
     {
-        echo 'I\'m working!';
+        echo "I'm working!\n";
 
         $facade = new Facade($this->di);
-        $facade->run();
-
-        $facade->logSongs();
+        $facade->runParsing();
     }
 
 }

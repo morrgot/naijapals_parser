@@ -17,13 +17,11 @@ function v(){
 function p($a){
     echo "\n";
     print_r($a);
-    echo "\n";
 }
 
 function pf(){
     echo "\n";
     print_r(call_user_func_array('sprintf', func_get_args()));
-    echo "\n";
 }
 
 

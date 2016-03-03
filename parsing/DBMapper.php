@@ -31,12 +31,12 @@ class DBMapper
     /**
      * @var array
      */
-    protected $songs_insert;
+    protected $songs_insert = [];
 
     /**
      * @var array
      */
-    protected $artists;
+    protected $artists = [];
 
     /**
      * @var array
@@ -55,11 +55,14 @@ class DBMapper
     public function __construct(Pdo $db)
     {
         $this->db = $db;
+        $db->close();
     }
 
     public function mapIntoDb($songs_array = array())
     {
         $this->songs_array = $songs_array;
+
+        $this->db->connect();
 
         $this->parseIncomeData();
 
@@ -70,8 +73,14 @@ class DBMapper
         $this->prepareSongInsert();
 
         $this->saveNewSongs();
+
+        $this->db->close();
+
     }
 
+    /**
+     *
+     */
     protected function parseIncomeData()
     {
         foreach ($this->songs_array as $item) {
@@ -79,10 +88,13 @@ class DBMapper
         }
     }
 
+    /**
+     *
+     */
     protected function filterArtists()
     {
         /**
-         * @var $artist Artists
+         * @var $artists Artists[]
          */
         $artists = Artists::getByNames($this->artists);
         $this->new_artists = $this->artists;
@@ -93,6 +105,7 @@ class DBMapper
 
     protected function saveNewArtists()
     {
+        // todo: batch insert
         pf('We have %d old artists and %d new artists', count($this->old_artists), count($this->new_artists));
         foreach ($this->new_artists as $new_artist) {
             $model = new Artists();
@@ -115,6 +128,7 @@ class DBMapper
 
     protected function saveNewSongs()
     {
+        // todo: batch insert
         pf('We have %d new songs to save!', count($this->songs_insert));
         foreach ($this->songs_insert as $item) {
             $model = new Songs();
