@@ -28,4 +28,11 @@ class Artists extends BaseModel
     {
         $this->hasMany('id', Songs::className(), 'artist_id', 'author');
     }
+
+    public static function getByNames($names)
+    {
+        return self::query()
+            ->inWhere('name', $names)
+            ->execute();
+    }
 }

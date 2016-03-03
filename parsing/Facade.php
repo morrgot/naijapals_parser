@@ -53,7 +53,7 @@ class Facade
     {
         $this->parser = $di->get('html_parser');
         $this->provider = $di->get('html_provider');
-        $this->mapper = new DBMapper();
+        $this->mapper = $di->get('songs_mapper');
         $this->url = trim($url);
     }
 
@@ -78,7 +78,7 @@ class Facade
 
             //file_put_contents(time().'.html',$html);
 
-            if($this->pages_processed < 20){
+            if($this->pages_processed < 1){
                 $this->run();
             }
         }
@@ -94,6 +94,7 @@ class Facade
     public function map2db()
     {
 
+        $this->mapper->mapIntoDb($this->songs);
         $this->songs = [];
     }
 

@@ -20,6 +20,13 @@ function p($a){
     echo "\n";
 }
 
+function pf(){
+    echo "\n";
+    print_r(call_user_func_array('sprintf', func_get_args()));
+    echo "\n";
+}
+
+
 // load composer
 require __DIR__ . '/vendor/autoload.php';
 

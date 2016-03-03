@@ -8,7 +8,7 @@
 
 $di = new \Phalcon\Di\FactoryDefault\Cli();
 $di->setShared('config', function(){
-    return new \Phalcon\Config\Adapter\Ini(__DIR__ .'/config/config.ini');
+    return new \Phalcon\Config\Adapter\Ini(APP_PATH .'/config/config.ini');
 });
 
 // setup database connection
@@ -26,12 +26,10 @@ $di->setShared('db', function () use ($di) {
     ));
 });
 
-$di->setShared('html_provider', function(){
-   return new \App\Parsing\HtmlProvider();
-});
+$di->setShared('html_provider', new \App\Parsing\HtmlProvider());
 
-$di->setShared('html_parser', function(){
-    return new \App\Parsing\Parser();
-});
+$di->setShared('html_parser', new \App\Parsing\Parser());
+
+$di->setShared('songs_mapper', new \App\Parsing\DBMapper($di->get('db')));
 
 return $di;

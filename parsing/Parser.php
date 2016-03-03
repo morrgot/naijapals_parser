@@ -95,8 +95,8 @@ class Parser
             $author = $item->find('small strong');
 
             $this->songs[] = [
-                'song' => $song[0]->text(),
-                'author' => $author[0]->text()
+                'song' => trim($song[0]->text()),
+                'author' => trim($author[0]->text())
             ];
         }
     }
