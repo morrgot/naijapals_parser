@@ -22,6 +22,4 @@ composer.phar
 .DS_Store
 
 
-config/config.ini
-
 runtime
