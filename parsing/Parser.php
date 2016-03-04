@@ -95,8 +95,8 @@ class Parser
             $author = $item->find('small strong');
 
             $this->songs[] = [
-                'song' => trim($song[0]->text()),
-                'author' => trim($author[0]->text())
+                'song' => count($song) < 1 ? 'Unknown song' : trim(strip_tags($song[0]->text())),
+                'author' => count($author) < 1 ? 'Unknown author' : trim(strip_tags($author[0]->text()))
             ];
         }
     }

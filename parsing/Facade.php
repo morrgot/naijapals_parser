@@ -17,6 +17,8 @@ class Facade
 
     const PAGES_PER_SAVE = 30;
 
+    const MAX_ATTEMPTS = 5;
+
     /**
      * @var Parser
      */
@@ -48,12 +50,17 @@ class Facade
     protected $pages_processed = 0;
 
     /**
+     * @var
+     */
+    protected $attempts = self::MAX_ATTEMPTS;
+
+    /**
      * Parsing facade constructor.
      *
      * @param DiInterface $di
      * @param string $url
      */
-    public function __construct(DiInterface $di, $url = '?L=music.browse&page=1')
+    public function __construct(DiInterface $di, $url = '?L=music.browse&page=2079')
     {
         $this->parser = $di->get('html_parser');
         $this->provider = $di->get('html_provider');
@@ -72,7 +79,7 @@ class Facade
         $this->url = $url;
     }
 
-    public function runParsing()
+    public function runParsing($restore_attempts = false)
     {
         $this->provider->setUrl($this->url);
         pf('Trying to parse %s ..', $this->url);
@@ -95,7 +102,11 @@ class Facade
 
             $next_url = $this->parser->getNextUrl();
 
-            if(!empty($next_url)/* && $this->pages_processed < 61*/){
+            if(!empty($next_url) /*&& $this->pages_processed < 2*/){
+                if($restore_attempts){
+                    $this->attempts = self::MAX_ATTEMPTS;
+                }
+
                 $this->setUrl($next_url);
                 $this->runParsing();
             }else{
@@ -103,6 +114,15 @@ class Facade
                 $this->map2db();
                 p('That\'s it :)');
             }
+        }else{
+            if(--$this->attempts > 0){
+                pf('--Smth went wrong on reading url"%s". Gonna try again in %d sec. We have %d more.',$this->url, 10, $this->attempts);
+                sleep(10);
+                $this->runParsing(true);
+            }
+
+            $this->map2db();
+            p('That\'s it :)');
         }
 
         return true;
