@@ -43,3 +43,4 @@ $di = require(APP_PATH.'/config/di.php');
 echo "\n\n";
 pf('Memory usage: %f MB', round(memory_get_peak_usage()/(1024*1024), 2));
 pf('Time spent: %f sec', round(microtime(true) - START_TIME, 6));
+exit();

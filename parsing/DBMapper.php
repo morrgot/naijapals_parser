@@ -19,7 +19,7 @@ use Phalcon\Mvc\Model\Resultset;
 
 class DBMapper
 {
-    const MAX_ARTIST_NAME = 95;
+
     /**
      * @var \Phalcon\Db\Adapter\Pdo
      */

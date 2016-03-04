@@ -60,7 +60,7 @@ class Facade
      * @param DiInterface $di
      * @param string $url
      */
-    public function __construct(DiInterface $di, $url = '?L=music.browse&page=2079')
+    public function __construct(DiInterface $di, $url = '?L=music.browse&page=1')
     {
         $this->parser = $di->get('html_parser');
         $this->provider = $di->get('html_provider');
