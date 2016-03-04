@@ -7,6 +7,8 @@
  */
 
 define('APP_PATH', __DIR__);
+define('RUNTIME_PATH', realpath(__DIR__.'/runtime'));
+define('START_TIME', time());
 
 function v(){
     echo "\n";
@@ -24,7 +26,6 @@ function pf(){
     print_r(call_user_func_array('sprintf', func_get_args()));
 }
 
-
 // load composer
 require __DIR__ . '/vendor/autoload.php';
 
@@ -38,3 +39,7 @@ require __DIR__ . '/vendor/autoload.php';
 $di = require(APP_PATH.'/config/di.php');
 
 (new \Phalcon\Cli\Console($di))->handle(['task' => 'App\Tasks\Main', 'action' => 'run']);
+
+echo "\n\n";
+pf('Memory usage: %f MB', round(memory_get_peak_usage()/(1024*1024), 2));
+pf('Time spent: %f sec', round(microtime(true) - START_TIME, 6));

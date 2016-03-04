@@ -66,7 +66,6 @@ class HtmlProvider
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 30);
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-
         $output = curl_exec($ch);
 
         $this->status = curl_getinfo($ch,CURLINFO_HTTP_CODE);
@@ -80,8 +79,4 @@ class HtmlProvider
         }
     }
 
-    protected function validateUrl()
-    {
-
-    }
 }

@@ -15,6 +15,8 @@ class Facade
 {
     const HOST_URL = 'http://www.naijapals.com';
 
+    const PAGES_PER_SAVE = 30;
+
     /**
      * @var Parser
      */
@@ -51,43 +53,56 @@ class Facade
      * @param DiInterface $di
      * @param string $url
      */
-    public function __construct(DiInterface $di, $url = self::HOST_URL.'/?L=music.browse&page=1')
+    public function __construct(DiInterface $di, $url = '?L=music.browse&page=1')
     {
         $this->parser = $di->get('html_parser');
         $this->provider = $di->get('html_provider');
         $this->mapper = $di->get('songs_mapper');
-        $this->url = trim($url);
+        $this->setUrl($url);
     }
 
     public function setUrl($url)
     {
         $url = trim($url);
 
+        if(!preg_match('/^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})?([\?\/])?/', $url)){
+            $url = self::HOST_URL.'/'.$url;
+        }
+
+        $this->url = $url;
     }
 
     public function runParsing()
     {
         $this->provider->setUrl($this->url);
-
+        pf('Trying to parse %s ..', $this->url);
         if($this->provider->readUrl()){
 
             $this->pages_processed++;
-            p('processed '.$this->pages_processed.' pages..');
             $html = $this->provider->getHtml();
 
             $this->parser->setHtml($html);
             $this->parser->parse();
 
-            $this->url = $this->parser->getNextUrl();
             $songs = $this->parser->getSongs();
 
             $this->songs = array_merge($songs, $this->songs);
 
-            if($this->pages_processed % 10 == 0){
+            if($this->pages_processed % self::PAGES_PER_SAVE == 0){
+                p('gonna put songs into db ...');
                 $this->map2db();
             }
 
-            $this->runParsing();
+            $next_url = $this->parser->getNextUrl();
+
+            if(!empty($next_url)/* && $this->pages_processed < 61*/){
+                $this->setUrl($next_url);
+                $this->runParsing();
+            }else{
+                p('Empty url was given. Seems like we need to stop ..');
+                $this->map2db();
+                p('That\'s it :)');
+            }
         }
 
         return true;
@@ -96,6 +111,7 @@ class Facade
     public function map2db()
     {
         $this->mapper->mapIntoDb($this->songs);
+        $this->songs = null;
         $this->songs = [];
     }
 

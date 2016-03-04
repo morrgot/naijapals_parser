@@ -24,6 +24,8 @@ class Artists extends BaseModel
 
     public $name;
 
+    public $hash;
+
     public function initialize()
     {
         $this->hasMany('id', Songs::className(), 'artist_id', 'author');
@@ -34,5 +36,22 @@ class Artists extends BaseModel
         return self::query()
             ->inWhere('name', $names)
             ->execute();
+    }
+
+    public static function getByHashes($hashes)
+    {
+        return self::query()
+            ->inWhere('hash', $hashes)
+            ->execute();
+    }
+
+    public function beforeSave()
+    {
+        $this->hash = self::hashArtistName($this->name);
+    }
+
+    public static function hashArtistName($name)
+    {
+        return md5(strtolower($name));
     }
 }

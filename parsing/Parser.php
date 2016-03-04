@@ -108,10 +108,10 @@ class Parser
         $url = '';
         if(count($result)){
             $last_a = array_pop($result);
-            $url = 'http://www.naijapals.com/'.$last_a->href;
+            $url = $last_a->href;
         }
 
-        $this->next_url = $url;
+        $this->next_url = trim($url);
     }
 
     public function clear()

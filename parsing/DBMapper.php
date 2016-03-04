@@ -11,6 +11,7 @@ namespace App\Parsing;
 
 use App\Models\Artists;
 use App\Models\Songs;
+use Phalcon\Db;
 use Phalcon\Db\Adapter\Pdo;
 use Phalcon\Di;
 use Phalcon\DiInterface;
@@ -18,6 +19,7 @@ use Phalcon\Mvc\Model\Resultset;
 
 class DBMapper
 {
+    const MAX_ARTIST_NAME = 95;
     /**
      * @var \Phalcon\Db\Adapter\Pdo
      */
@@ -31,22 +33,37 @@ class DBMapper
     /**
      * @var array
      */
-    protected $songs_insert = [];
+    protected $songs_insert;
 
     /**
      * @var array
      */
-    protected $artists = [];
+    protected $artists_hashes;
 
     /**
      * @var array
      */
-    protected $new_artists = [];
+    protected $new_artists;
 
     /**
      * @var array
      */
-    protected $old_artists = [];
+    protected $old_artists;
+
+    /**
+     * @var Artists[]
+     */
+    protected $artists_found;
+
+    /**
+     * @var int
+     */
+    protected $added_artists_count;
+
+    /**
+     * @var int
+     */
+    protected $added_songs_count;
 
     /**
      * DBMapper constructor.
@@ -62,20 +79,42 @@ class DBMapper
     {
         $this->songs_array = $songs_array;
 
+        pf('Mapper received %d songs! ..', count($this->songs_array));
+
         $this->db->connect();
 
-        $this->parseIncomeData();
+        $this->initAll();
 
-        $this->filterArtists();
+        try {
+            $this->parseIncomeData();
 
-        $this->saveNewArtists();
+            $this->filterArtists();
 
-        $this->prepareSongInsert();
+            $this->saveNewArtists();
 
-        $this->saveNewSongs();
+            $this->prepareSongInsert();
+
+            $this->saveNewSongs();
+        } catch (\Exception $e){
+            pf('%s : %s', get_class($e), $e->getMessage());
+
+            $str = '';
+            $str .= "new artists:\n";
+            $str .= print_r($this->new_artists,1);
+
+            $str .= "old artists:\n";
+            $str .= print_r($this->old_artists,1);
+
+            $str .= "found artists:\n";
+            $str .= print_r($this->artists_found->toArray(),1);
+
+            file_put_contents(RUNTIME_PATH.'/error_log.txt', $str);
+
+            throw new \Exception('aborting all process');
+        }
 
         $this->db->close();
-
+        $this->clearAll();
     }
 
     /**
@@ -84,8 +123,13 @@ class DBMapper
     protected function parseIncomeData()
     {
         foreach ($this->songs_array as $item) {
-            $this->artists[strtolower($item['author'])] = $item['author'];
+            $hash = Artists::hashArtistName($item['author']);
+
+            $this->new_artists[$hash] = $item['author'];
+            $this->artists_hashes[] = $hash;
         }
+
+        $this->artists_hashes = array_unique($this->artists_hashes);
     }
 
     /**
@@ -93,13 +137,10 @@ class DBMapper
      */
     protected function filterArtists()
     {
-        /**
-         * @var $artists Artists[]
-         */
-        $artists = Artists::getByNames($this->artists);
-        $this->new_artists = $this->artists;
-        foreach ($artists as $artist) {
-            $this->addOldArtist($artist->id, $artist->name);
+        pf('gonna find %d artists!', count($this->artists_hashes));
+        $this->artists_found = Artists::getByHashes($this->artists_hashes);
+        foreach ($this->artists_found as $artist) {
+            $this->addOldArtist($artist);
         }
     }
 
@@ -111,10 +152,9 @@ class DBMapper
             $model = new Artists();
             $model->name = $new_artist;
 
-            pf('Saving new artist - %s', $new_artist);
             if($model->save()){
 
-                $this->addOldArtist($model->id, $model->name);
+                $this->addOldArtist($model);
 
                 p('New artist saved - '.$new_artist. ' id = '.$model->id);
             } else {
@@ -135,7 +175,6 @@ class DBMapper
             $model->name = $item['song'];
             $model->artist_id = $item['artist_id'];
 
-            pf('Saving new song - %s', $item['song']);
             if($model->save()){
                 p('New song saved - '.$item['song']. ' id = '.$model->id);
             } else {
@@ -145,15 +184,13 @@ class DBMapper
                 }
             }
         }
-
-        $this->songs_insert = [];
     }
 
     protected function prepareSongInsert()
     {
         foreach ($this->songs_array as $k => $item) {
 
-            $key = strtolower($item['author']);
+            $key = Artists::hashArtistName($item['author']);
 
             if(isset($this->old_artists[$key])){
                 $this->songs_array[$k]['artist_id'] = $this->old_artists[$key];
@@ -171,47 +208,59 @@ class DBMapper
 
         $where = '';
         foreach ($this->songs_array as $item) {
-            $where .= 'name = '.$this->db->escapeString($item['song']) .' AND artist_id = '.(int)$item['artist_id'].' OR ';
+            $where .= '(name = '.$this->db->escapeString($item['song']) .' AND artist_id = '.(int)$item['artist_id'].') OR ';
         }
 
         /**
-         * @var Resultset $result
+         * @var \Phalcon\Db\Result\Pdo $result
          * @var object $song
          */
-        $result = Songs::find(array(
-            substr($where, 0, -4),
-            "hydration" => Resultset::HYDRATE_OBJECTS
-        ));
+
+        $result = $this->db->query('SELECT `id`, `name` FROM `songs` WHERE '.substr($where, 0, -4).';');
+        $result->setFetchMode(Db::FETCH_OBJ);
 
         $old_songs = [];
-        foreach ($result as $song) {
+        foreach ($result->fetchAll() as $song) {
             $old_songs[$song->name] = $song;
         }
 
-        $this->songs_insert = [];
         foreach ($this->songs_array as $k => $item) {
             if(!isset($old_songs[$item['song']])){
                 $this->songs_insert[] = $item;
-            }else{
-                pf('Old song found! "%s"', $item['song']);
             }
         }
+
+        pf('Found %d old songs! ', count($this->songs_array)-count($this->songs_insert));
     }
 
     /**
      * Adds known artists to $this->old_artists and deletes him from new ones if need
      *
-     * @param int|string $id
-     * @param string $name
+     * @param Artists $artist
      */
-    protected function addOldArtist($id, $name)
+    protected function addOldArtist(Artists $artist)
     {
-        $name = strtolower($name);
-
-        if(isset($this->new_artists[$name])){
-            unset($this->new_artists[$name]);
+        if(isset($this->new_artists[$artist->hash])){
+            unset($this->new_artists[$artist->hash]);
         }
 
-        $this->old_artists[$name] = (int)$id;
+        $this->old_artists[$artist->hash] = (int)$artist->id;
+    }
+
+    protected function clearAll()
+    {
+        $this->artists_found = null;
+        $this->artists_hashes = null;
+        $this->new_artists = null;
+        $this->old_artists = null;
+        $this->songs_insert = null;
+    }
+
+    protected function initAll()
+    {
+        $this->new_artists = [];
+        $this->old_artists = [];
+        $this->artists_hashes = [];
+        $this->songs_insert = [];
     }
 }

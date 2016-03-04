@@ -8,11 +8,10 @@
 
 namespace App\Tasks;
 
-use App\Models\Artists;
 use App\Parsing\Facade;
-use App\Parsing\HtmlProvider;
-use App\Parsing\Parser;
 use Phalcon\Cli\Task;
+use Phalcon\Db;
+use Phalcon\Di;
 
 /**
  * Class MainTask
@@ -26,7 +25,7 @@ class MainTask extends Task
 
     public function runAction()
     {
-        echo "I'm working!\n";
+        p("I'm working!\n");
 
         $facade = new Facade($this->di);
         $facade->runParsing();
